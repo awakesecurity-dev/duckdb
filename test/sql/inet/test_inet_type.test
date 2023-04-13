@@ -13,14 +13,44 @@ SELECT '127.0.0.1'::INET::VARCHAR
 127.0.0.1
 
 query I
+SELECT '::1'::INET::VARCHAR
+----
+::1
+
+query I
+SELECT '0:0:0:0:0:0:0:1'::INET::VARCHAR
+----
+::1
+
+query I
 SELECT '127.0.0.1/17'::INET::VARCHAR
 ----
 127.0.0.1/17
 
 query I
+SELECT '0:0:0:0:0:0:0:1/96'::INET::VARCHAR
+----
+::1/96
+
+query I
 SELECT '127.0.0.1'::INET
 ----
 127.0.0.1
+
+query I
+SELECT '::1'::INET
+----
+::1
+
+query I
+SELECT 'ffff::1'::inet;
+----
+ffff::1
+
+query I
+SELECT 'a:b:c:d:e:f:192.168.0.1'::inet;
+----
+a:b:c:d:e:f:c0a8:1
 
 query I
 select '127.000.0000.1'::inet;
@@ -32,8 +62,18 @@ SELECT INET '0.0.0.0/0', INET '255.255.255.255/31'
 ----
 0.0.0.0/0	255.255.255.255/31
 
+query II
+SELECT INET '0:0:0:0:0:0:0:0/0', INET 'ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/127'
+----
+::/0	ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/127
+
 query I
 SELECT typeof('127.0.0.1/17'::INET)
+----
+inet
+
+query I
+SELECT typeof('::1/96'::INET)
 ----
 inet
 
@@ -60,3 +100,19 @@ SELECT '127.0.0.1/333'::INET::VARCHAR
 
 statement error
 SELECT '127.0.0.1/33333333333333333333'::INET::VARCHAR
+
+statement error
+SELECT 'ffff'::inet;
+
+statement error
+SELECT 'a:b:c:d:e:f:192.168.00.1'::inet;
+
+statement error
+SELECT 'a:b:c:d:e:f:0:1/129'::inet;
+
+statement error
+SELECT '-a:b:c:d:e:f:0:1/128'::inet;
+
+statement error
+SELECT 'a::b::c'::inet;
+

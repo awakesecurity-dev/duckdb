@@ -17,8 +17,12 @@ namespace duckdb {
 enum class IPAddressType : uint8_t { IP_ADDRESS_INVALID = 0, IP_ADDRESS_V4 = 1, IP_ADDRESS_V6 = 2 };
 
 class IPAddress {
+private:
+	static bool TryParseIP4(string_t input, IPAddress &result, string *error_message);
+
 public:
 	constexpr static const int32_t IPV4_DEFAULT_MASK = 32;
+	constexpr static const int32_t IPV6_DEFAULT_MASK = 128;
 
 public:
 	IPAddress();
