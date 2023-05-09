@@ -10,12 +10,28 @@
 
 namespace duckdb {
 
-namespace net {
-	typedef union __address {
-		uint32_t lvalue[4];
-		uint16_t svalue[8];
-		hugeint_t value;
-	} ipaddress;
+hugeint_t htonllll_le(hugeint_t hosthuge) {
+	net::ipaddress buf;
+
+	buf.value = hosthuge;
+	for (unsigned long i = 0; i < sizeof(buf.svalue) / sizeof(buf.svalue[0]); i += 2) {
+		auto tmp = buf.svalue[(sizeof(buf.svalue) / sizeof(buf.svalue[0])) - 1 - i];
+		buf.svalue[(sizeof(buf.svalue) / sizeof(buf.svalue[0])) - 1 - i] = htons(buf.svalue[i]);
+		buf.svalue[i] = htons(tmp);
+	}
+	return buf.value;
+}
+
+hugeint_t ntohllll_le(hugeint_t nethuge) {
+	net::ipaddress buf;
+
+	buf.value = nethuge;
+	for (unsigned long i = 0; i < sizeof(buf.svalue) / sizeof(buf.svalue[0]); i += 2) {
+		auto tmp = buf.svalue[(sizeof(buf.svalue) / sizeof(buf.svalue[0])) - 1 - i];
+		buf.svalue[(sizeof(buf.svalue) / sizeof(buf.svalue[0])) - 1 - i] = ntohs(buf.svalue[i]);
+		buf.svalue[i] = ntohs(tmp);
+	}
+	return buf.value;
 }
 
 IPAddress::IPAddress() : type(IPAddressType::IP_ADDRESS_INVALID) {
@@ -39,7 +55,7 @@ static bool IPAddressError(string_t input, string *error_message, string error) 
 
 bool IPAddress::TryParse(string_t input, IPAddress &result, string *error_message) {
 	std::string inbuf = std::string(input.GetDataUnsafe(), input.GetSize());
-	const char* ipmask = strchr(input.GetDataUnsafe(), '/');
+	const char* ipmask = (const char*)memchr(input.GetDataUnsafe(), '/', input.GetSize());
 	std::string ipbuf = ipmask == NULL ? inbuf : std::string(input.GetDataUnsafe(), ipmask);
 	net::ipaddress buf;
 	int domain = AF_INET6;
@@ -62,11 +78,7 @@ bool IPAddress::TryParse(string_t input, IPAddress &result, string *error_messag
 		//
 		// Note: this implementation doesn't support ip address: a:b:c:d:e:f:192.168.000.1
 		//       but do support: a.b.c.d.e.f.192.168.0.1
-		for (unsigned long i = 0; i < sizeof(buf.svalue) / sizeof(buf.svalue[0]); i += 2) {
-			auto tmp = buf.svalue[(sizeof(buf.svalue) / sizeof(buf.svalue[0])) - 1 - i];
-			buf.svalue[(sizeof(buf.svalue) / sizeof(buf.svalue[0])) - 1 - i] = ntohs(buf.svalue[i]);
-			buf.svalue[i] = ntohs(tmp);
-		}
+		buf.value = ntohllll_le(buf.value);
 	}
 
 	result.address = buf.value;
@@ -159,22 +171,6 @@ parse_mask:
 	result.mask = mask;
 	return true;
 }
-
-/* string IPAddress::ToString() const {
-	string result;
-	for (idx_t i = 0; i < 4; i++) {
-		if (i > 0) {
-			result += ".";
-		}
-		uint8_t byte = Hugeint::Cast<uint8_t>((address >> (3 - i) * 8) & 0xFF);
-		auto str = to_string(byte);
-		result += str;
-	}
-	if (mask != IPAddress::IPV4_DEFAULT_MASK) {
-		result += "/" + to_string(mask);
-	}
-	return result;
-} */
 
 string IPAddress::ToString() const {
 	char str[INET6_ADDRSTRLEN];

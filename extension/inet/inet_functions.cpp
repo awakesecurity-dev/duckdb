@@ -6,9 +6,9 @@
 #include "duckdb/common/types/cast_helpers.hpp"
 #include "duckdb/common/vector_operations/generic_executor.hpp"
 
-namespace duckdb {
+#include <assert.h>
 
-using INET_TYPE = StructTypeTernary<uint8_t, hugeint_t, uint16_t>;
+namespace duckdb {
 
 bool INetFunctions::CastVarcharToINET(Vector &source, Vector &result, idx_t count, CastParameters &parameters) {
 	auto constant = source.GetVectorType() == VectorType::CONSTANT_VECTOR;
@@ -76,6 +76,64 @@ void INetFunctions::Subtract(DataChunk &args, ExpressionState &state, Vector &re
 		    result.b_val = new_address;
 		    result.c_val = ip.c_val;
 		    return result;
+	    });
+}
+
+bool INetFunctions::InetContains(INET_TYPE source, INET_TYPE target) {
+    if (target.a_val != source.a_val) throw NotImplementedException("IPv4 contains IPv6 or vice-a-versa!?");
+    if (target.c_val >= source.c_val) return false;
+    if (target.c_val == 0) return true;
+    else {
+        if (IPAddressType(target.a_val) == IPAddressType::IP_ADDRESS_V4) {
+            net::ipaddress &sbuf = *(net::ipaddress*)&source.b_val;
+            net::ipaddress &tbuf = *(net::ipaddress*)&target.b_val;
+            return ((sbuf.lvalue[0] >> (IPAddress::IPV4_DEFAULT_MASK - target.c_val)) ==
+                    (tbuf.lvalue[0] >> (IPAddress::IPV4_DEFAULT_MASK - target.c_val)));
+        } else {
+            return ((source.b_val >> (IPAddress::IPV6_DEFAULT_MASK - target.c_val)) ==
+                    (target.b_val >> (IPAddress::IPV6_DEFAULT_MASK - target.c_val)));
+        }
+    }
+}
+
+bool INetFunctions::InetContainsOrEqual(INET_TYPE source, INET_TYPE target) {
+    if (target.a_val != source.a_val) throw NotImplementedException("IPv4 contains IPv6 or vice-a-versa!?");
+    if (target.c_val > source.c_val) return false;
+    if (target.c_val == 0) return true;
+    else {
+        if (IPAddressType(target.a_val) == IPAddressType::IP_ADDRESS_V4) {
+            net::ipaddress &sbuf = *(net::ipaddress*)&source.b_val;
+            net::ipaddress &tbuf = *(net::ipaddress*)&target.b_val;
+            return ((sbuf.lvalue[0] >> (IPAddress::IPV4_DEFAULT_MASK - target.c_val)) ==
+                    (tbuf.lvalue[0] >> (IPAddress::IPV4_DEFAULT_MASK - target.c_val)));
+        } else {
+            return ((source.b_val >> (IPAddress::IPV6_DEFAULT_MASK - target.c_val)) ==
+                    (target.b_val >> (IPAddress::IPV6_DEFAULT_MASK - target.c_val)));
+        }
+    }
+}
+
+void INetFunctions::Contains(DataChunk &args, ExpressionState &state, Vector &result) {
+    GenericExecutor::ExecuteBinary<INET_TYPE, INET_TYPE, PrimitiveType<bool>>(
+        args.data[0], args.data[1], result, args.size(), InetContains);
+}
+
+void INetFunctions::ContainsOrEqual(DataChunk &args, ExpressionState &state, Vector &result) {
+	GenericExecutor::ExecuteBinary<INET_TYPE, INET_TYPE, PrimitiveType<bool>>(
+	    args.data[0], args.data[1], result, args.size(), InetContainsOrEqual);
+}
+
+void INetFunctions::ContainWithin(DataChunk &args, ExpressionState &state, Vector &result) {
+	GenericExecutor::ExecuteBinary<INET_TYPE, INET_TYPE, PrimitiveType<bool>>(
+	    args.data[0], args.data[1], result, args.size(), [&](INET_TYPE source, INET_TYPE target) {
+            return InetContains(target, source);
+	    });
+}
+
+void INetFunctions::ContainWithinOrEqual(DataChunk &args, ExpressionState &state, Vector &result) {
+	GenericExecutor::ExecuteBinary<INET_TYPE, INET_TYPE, PrimitiveType<bool>>(
+	    args.data[0], args.data[1], result, args.size(), [&](INET_TYPE source, INET_TYPE target) {
+            return InetContainsOrEqual(target, source);
 	    });
 }
 

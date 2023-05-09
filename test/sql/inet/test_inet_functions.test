@@ -1,4 +1,4 @@
-# name: test/sql/inet/test_inet_functions.test
+# name: test/sql/test_inet_functions.test
 # description: Test inet type
 # group: [inet]
 
@@ -34,6 +34,132 @@ query I
 SELECT INET '127.0.0.31' - -32;
 ----
 127.0.0.63
+
+# support inet operators
+query I
+SELECT '172.25.2.10'::inet << '172.25.2.0/24'::inet
+----
+true
+
+query I
+SELECT '172.25.2.10'::inet << '172.25.2.10'::inet
+----
+false
+
+query I
+SELECT '172.25.2.0/24'::inet << '172.25.2.0/24'::inet
+----
+false
+
+query I
+SELECT '172.25.2.0/24'::inet << '172.25.2.10'::inet
+----
+false
+
+query I
+SELECT '172.25.2.10'::inet <<= '172.25.2.0/24'::inet
+----
+true
+
+query I
+SELECT '172.25.2.10'::inet <<= '172.25.2.10'::inet
+----
+true
+
+query I
+SELECT '172.25.2.0/24'::inet <<= '172.25.2.0/24'::inet
+----
+true
+
+query I
+SELECT '172.25.2.0/24'::inet <<= '172.25.2.10'::inet
+----
+false
+
+query I
+SELECT '172.25.2.10'::inet >> '172.25.2.0/24'::inet
+----
+false
+
+query I
+SELECT '172.25.2.10'::inet >> '172.25.2.10'::inet
+----
+false
+
+query I
+SELECT '172.25.2.0/24'::inet >> '172.25.2.0/24'::inet
+----
+false
+
+query I
+SELECT '172.25.2.0/24'::inet >> '172.25.2.10'::inet
+----
+true
+
+query I
+SELECT '172.25.2.10'::inet >>= '172.25.2.0/24'::inet
+----
+false
+
+query I
+SELECT '172.25.2.10'::inet >>= '172.25.2.10'::inet
+----
+true
+
+query I
+SELECT '172.25.2.0/24'::inet >>= '172.25.2.0/24'::inet
+----
+true
+
+query I
+SELECT '172.25.2.0/24'::inet >>= '172.25.2.10'::inet
+----
+true
+
+query I
+SELECT '0.0.0.0/0'::inet >>= '172.25.2.0/24'::inet
+----
+true
+
+query I
+SELECT '0.0.0.0/0'::inet >> '172.25.2.0/24'::inet
+----
+true
+
+query I
+SELECT '0.0.0.0/0'::inet >> '10.10.0.0/16'::inet
+----
+true
+
+query I
+SELECT '0.0.0.0/0'::inet >> '10.0.0.0/8'::inet
+----
+true
+
+query I
+SELECT '0.0.0.0/0'::inet >>= '10.0.0.0/8'::inet
+----
+true
+
+query I
+SELECT '0.0.0.0/1'::inet >>= '10.0.0.0/8'::inet
+----
+true
+
+query I
+SELECT '0.0.0.0/1'::inet >>= '172.25.0.0/16'::inet
+----
+false
+
+query I
+SELECT '128.0.0.0/1'::inet >>= '10.0.0.0/8'::inet
+----
+false
+
+query I
+SELECT '128.0.0.0/1'::inet >>= '172.25.0.0/16'::inet
+----
+true
 
 # underflow
 statement error

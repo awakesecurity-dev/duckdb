@@ -16,6 +16,17 @@ namespace duckdb {
 
 enum class IPAddressType : uint8_t { IP_ADDRESS_INVALID = 0, IP_ADDRESS_V4 = 1, IP_ADDRESS_V6 = 2 };
 
+namespace net {
+	typedef union __address {
+		uint32_t lvalue[4];
+		uint16_t svalue[8];
+		hugeint_t value;
+	} ipaddress;
+}
+
+hugeint_t htonllll_le(hugeint_t hosthuge);
+hugeint_t ntohllll_le(hugeint_t nethuge);
+
 class IPAddress {
 private:
 	static bool TryParseIP4(string_t input, IPAddress &result, string *error_message);
