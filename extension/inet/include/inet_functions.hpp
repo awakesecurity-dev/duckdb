@@ -30,9 +30,20 @@ struct INetFunctions {
 	static void ContainWithin(DataChunk &args, ExpressionState &state, Vector &result);
 	static void ContainWithinOrEqual(DataChunk &args, ExpressionState &state, Vector &result);
 
+    static void Add(DataChunk &args, ExpressionState &state, Vector &result);
+    static void Equal(DataChunk &args, ExpressionState &state, Vector &result);
+    static void NotEqual(DataChunk &args, ExpressionState &state, Vector &result);
+    static void LessThan(DataChunk &args, ExpressionState &state, Vector &result);
+    static void LessThanOrEqual(DataChunk &args, ExpressionState &state, Vector &result);
+    static void GreaterThan(DataChunk &args, ExpressionState &state, Vector &result);
+    static void GreaterThanOrEqual(DataChunk &args, ExpressionState &state, Vector &result);
+
 private:
     static bool InetContains(INET_TYPE source, INET_TYPE target);
     static bool InetContainsOrEqual(INET_TYPE source, INET_TYPE target);
+    static bool InetEqual(const INET_TYPE source, const INET_TYPE target);
+    static bool InetLessThan(const INET_TYPE source, const INET_TYPE target);
+    static bool InetLessThanOrEqual(const INET_TYPE source, const INET_TYPE target);
 };
 
 } // namespace duckdb
