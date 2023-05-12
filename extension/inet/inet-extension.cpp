@@ -31,10 +31,15 @@ void INETExtension::Load(DuckDB &db) {
 	CreateScalarFunctionInfo host_info(host_fun);
 	catalog.CreateFunction(*con.context, &host_info);
 
-	auto substract_fun = ScalarFunction("-", {inet_type, LogicalType::HUGEINT}, inet_type, INetFunctions::Subtract);
-	CreateScalarFunctionInfo substract_info(substract_fun);
-	substract_info.on_conflict = OnCreateConflict::ALTER_ON_CONFLICT;
-	catalog.CreateFunction(*con.context, &substract_info);
+	auto subtract_fun = ScalarFunction("-", {inet_type, LogicalType::HUGEINT}, inet_type, INetFunctions::Subtract);
+	CreateScalarFunctionInfo subtract_info(subtract_fun);
+	subtract_info.on_conflict = OnCreateConflict::ALTER_ON_CONFLICT;
+	catalog.CreateFunction(*con.context, &subtract_info);
+
+	auto isubtract_fun = ScalarFunction("-", {inet_type, inet_type}, LogicalType::HUGEINT, INetFunctions::InetSubtract);
+	CreateScalarFunctionInfo isubtract_info(isubtract_fun);
+	isubtract_info.on_conflict = OnCreateConflict::ALTER_ON_CONFLICT;
+	catalog.CreateFunction(*con.context, &isubtract_info);
 
 	auto contain_within_fun = ScalarFunction(">>", {inet_type, inet_type}, LogicalType::BOOLEAN, INetFunctions::ContainWithin);
 	CreateScalarFunctionInfo contain_within_info(contain_within_fun);

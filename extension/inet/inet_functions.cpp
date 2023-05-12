@@ -87,6 +87,14 @@ void INetFunctions::Subtract(DataChunk &args, ExpressionState &state, Vector &re
        });
 }
 
+void INetFunctions::InetSubtract(DataChunk &args, ExpressionState &state, Vector &result) {
+    GenericExecutor::ExecuteBinary<INET_TYPE, INET_TYPE, PrimitiveType<hugeint_t>>(
+        args.data[0], args.data[1], result, args.size(), [&](INET_TYPE ip, INET_TYPE val) {
+            if (ip.a_val != val.a_val) throw NotImplementedException("IPv4 subtract from IPv6 or vice-a-versa!?");
+            return (ip.b_val - val.b_val);
+       });
+}
+
 void INetFunctions::Add(DataChunk &args, ExpressionState &state, Vector &result) {
     GenericExecutor::ExecuteBinary<INET_TYPE, PrimitiveType<hugeint_t>, INET_TYPE>(
         args.data[0], args.data[1], result, args.size(), [&](INET_TYPE ip, PrimitiveType<hugeint_t> val) {

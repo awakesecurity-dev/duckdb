@@ -30,6 +30,7 @@ struct INetFunctions {
 	static void ContainWithin(DataChunk &args, ExpressionState &state, Vector &result);
 	static void ContainWithinOrEqual(DataChunk &args, ExpressionState &state, Vector &result);
 
+	static void InetSubtract(DataChunk &args, ExpressionState &state, Vector &result);
     static void Add(DataChunk &args, ExpressionState &state, Vector &result);
     static void Equal(DataChunk &args, ExpressionState &state, Vector &result);
     static void NotEqual(DataChunk &args, ExpressionState &state, Vector &result);
