@@ -67,39 +67,45 @@ void INetFunctions::Host(DataChunk &args, ExpressionState &state, Vector &result
 }
 
 void INetFunctions::Subtract(DataChunk &args, ExpressionState &state, Vector &result) {
-	GenericExecutor::ExecuteBinary<INET_TYPE, PrimitiveType<hugeint_t>, INET_TYPE>(
-	    args.data[0], args.data[1], result, args.size(), [&](INET_TYPE ip, PrimitiveType<hugeint_t> val) {
-		    auto new_address = ip.b_val - val.val;
+    GenericExecutor::ExecuteBinary<INET_TYPE, PrimitiveType<hugeint_t>, INET_TYPE>(
+        args.data[0], args.data[1], result, args.size(), [&](INET_TYPE ip, PrimitiveType<hugeint_t> val) {
+            if (IPAddressType(ip.a_val) == IPAddressType::IP_ADDRESS_V4) {
+                if (val.val > UINT32_MAX) throw NotImplementedException("Out of range!?");
+            }
+            auto new_address = ip.b_val - val.val;
 
-		    if ( ((IPAddressType(ip.a_val) == IPAddressType::IP_ADDRESS_V4) && (new_address > UINT32_MAX)) ||
-			 ((IPAddressType(ip.a_val) == IPAddressType::IP_ADDRESS_V6) &&
-			  (val.val > 0 ? new_address > ip.b_val : new_address < ip.b_val)) ) {
-			    throw NotImplementedException("Out of range!?");
-		    }
-		    INET_TYPE result;
-		    result.a_val = ip.a_val;
-		    result.b_val = new_address;
-		    result.c_val = ip.c_val;
-		    return result;
-	    });
+            if ( ((IPAddressType(ip.a_val) == IPAddressType::IP_ADDRESS_V4) && (new_address < 0 || new_address > UINT32_MAX)) ||
+                 ((IPAddressType(ip.a_val) == IPAddressType::IP_ADDRESS_V6) &&
+                  ((new_address > 0 && ip.b_val < 0) || (new_address < 0 && ip.b_val > 0))) ) {
+                throw NotImplementedException("Out of range!?");
+            }
+            INET_TYPE result;
+            result.a_val = ip.a_val;
+            result.b_val = new_address;
+            result.c_val = ip.c_val;
+            return result;
+       });
 }
 
 void INetFunctions::Add(DataChunk &args, ExpressionState &state, Vector &result) {
-       GenericExecutor::ExecuteBinary<INET_TYPE, PrimitiveType<hugeint_t>, INET_TYPE>(
-           args.data[0], args.data[1], result, args.size(), [&](INET_TYPE ip, PrimitiveType<hugeint_t> val) {
-                   auto new_address = ip.b_val + val.val;
+    GenericExecutor::ExecuteBinary<INET_TYPE, PrimitiveType<hugeint_t>, INET_TYPE>(
+        args.data[0], args.data[1], result, args.size(), [&](INET_TYPE ip, PrimitiveType<hugeint_t> val) {
+            if (IPAddressType(ip.a_val) == IPAddressType::IP_ADDRESS_V4) {
+                if (val.val > UINT32_MAX) throw NotImplementedException("Out of range!?");
+            }
+            auto new_address = ip.b_val + val.val;
 
-                   if ( ((IPAddressType(ip.a_val) == IPAddressType::IP_ADDRESS_V4) && (new_address > UINT32_MAX)) ||
-                        ((IPAddressType(ip.a_val) == IPAddressType::IP_ADDRESS_V6) &&
-                         (val.val > 0 ? new_address < ip.b_val : new_address > ip.b_val)) ) {
-                           throw NotImplementedException("Out of range!?");
-                   }
-                   INET_TYPE result;
-                   result.a_val = ip.a_val;
-                   result.b_val = new_address;
-                   result.c_val = ip.c_val;
-                   return result;
-           });
+            if ( ((IPAddressType(ip.a_val) == IPAddressType::IP_ADDRESS_V4) && (new_address < 0 || new_address > UINT32_MAX)) ||
+                 ((IPAddressType(ip.a_val) == IPAddressType::IP_ADDRESS_V6) &&
+                  ((new_address > 0 && ip.b_val < 0) || (new_address < 0 && ip.b_val > 0))) ) {
+                throw NotImplementedException("Out of range!?");
+            }
+            INET_TYPE result;
+            result.a_val = ip.a_val;
+            result.b_val = new_address;
+            result.c_val = ip.c_val;
+            return result;
+       });
 }
 
 bool INetFunctions::InetContains(INET_TYPE source, INET_TYPE target) {
