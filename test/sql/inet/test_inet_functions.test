@@ -1,4 +1,4 @@
-# name: test/sql/inet/test_inet_functions.test
+# name: test/sql/test_inet_functions.test
 # description: Test inet type
 # group: [inet]
 
@@ -35,6 +35,298 @@ SELECT INET '127.0.0.31' - -32;
 ----
 127.0.0.63
 
+# contains and contain within
+query I
+SELECT '172.25.2.10'::inet << '172.25.2.0/24'::inet
+----
+true
+
+query I
+SELECT '172.25.2.10'::inet << '172.25.2.10'::inet
+----
+false
+
+query I
+SELECT '172.25.2.0/24'::inet << '172.25.2.0/24'::inet
+----
+false
+
+query I
+SELECT '172.25.2.0/24'::inet << '172.25.2.10'::inet
+----
+false
+
+query I
+SELECT '172.25.2.10'::inet <<= '172.25.2.0/24'::inet
+----
+true
+
+query I
+SELECT '172.25.2.10'::inet <<= '172.25.2.10'::inet
+----
+true
+
+query I
+SELECT '172.25.2.0/24'::inet <<= '172.25.2.0/24'::inet
+----
+true
+
+query I
+SELECT '172.25.2.0/24'::inet <<= '172.25.2.10'::inet
+----
+false
+
+query I
+SELECT '172.25.2.10'::inet >> '172.25.2.0/24'::inet
+----
+false
+
+query I
+SELECT '172.25.2.10'::inet >> '172.25.2.10'::inet
+----
+false
+
+query I
+SELECT '172.25.2.0/24'::inet >> '172.25.2.0/24'::inet
+----
+false
+
+query I
+SELECT '172.25.2.0/24'::inet >> '172.25.2.10'::inet
+----
+true
+
+query I
+SELECT '172.25.2.10'::inet >>= '172.25.2.0/24'::inet
+----
+false
+
+query I
+SELECT '172.25.2.10'::inet >>= '172.25.2.10'::inet
+----
+true
+
+query I
+SELECT '172.25.2.0/24'::inet >>= '172.25.2.0/24'::inet
+----
+true
+
+query I
+SELECT '172.25.2.0/24'::inet >>= '172.25.2.10'::inet
+----
+true
+
+query I
+SELECT '0.0.0.0/0'::inet >>= '172.25.2.0/24'::inet
+----
+true
+
+query I
+SELECT '0.0.0.0/0'::inet >> '172.25.2.0/24'::inet
+----
+true
+
+query I
+SELECT '0.0.0.0/0'::inet >> '10.10.0.0/16'::inet
+----
+true
+
+query I
+SELECT '0.0.0.0/0'::inet >> '10.0.0.0/8'::inet
+----
+true
+
+query I
+SELECT '0.0.0.0/0'::inet >>= '10.0.0.0/8'::inet
+----
+true
+
+query I
+SELECT '0.0.0.0/1'::inet >>= '10.0.0.0/8'::inet
+----
+true
+
+query I
+SELECT '0.0.0.0/1'::inet >>= '172.25.0.0/16'::inet
+----
+false
+
+query I
+SELECT '128.0.0.0/1'::inet >>= '10.0.0.0/8'::inet
+----
+false
+
+query I
+SELECT '128.0.0.0/1'::inet >>= '172.25.0.0/16'::inet
+----
+true
+
+# addition
+query I
+SELECT INET '127.0.0.223' + 32;
+----
+127.0.0.255
+
+query I
+SELECT INET '126.255.255.255' + 32;
+----
+127.0.0.31
+
+query I
+SELECT INET '127.0.0.63' + -32;
+----
+127.0.0.31
+
+# less than / greater than
+query I
+SELECT INET '192.168.1.1' < INET '192.168.1.10';
+----
+true
+
+query I
+SELECT INET '192.168.1.1/28' < INET '192.168.1.1/24';
+----
+false
+
+query I
+SELECT INET '192.168.1.1/24' < INET '192.168.2.254/24';
+----
+true
+
+query I
+SELECT INET '192.168.1.1/24' < INET '192.168.1.254/24';
+----
+true
+
+query I
+SELECT INET '192.168.1.254/24' < INET '192.168.1.254/24';
+----
+false
+
+query I
+SELECT INET '192.168.1.254/24' < INET '192.168.1.2/24';
+----
+false
+
+query I
+SELECT INET '192.168.1.254/24' < INET '192.168.1.2/28';
+----
+false
+
+query I
+SELECT INET '192.168.1.1' <= INET '192.168.1.10';
+----
+true
+
+query I
+SELECT INET '192.168.1.1/28' <= INET '192.168.1.1/24';
+----
+false
+
+query I
+SELECT INET '192.168.1.1/24' <= INET '192.168.2.254/24';
+----
+true
+
+query I
+SELECT INET '192.168.1.1/24' <= INET '192.168.1.254/24';
+----
+true
+
+query I
+SELECT INET '192.168.1.254/24' <= INET '192.168.1.254/24';
+----
+true
+
+query I
+SELECT INET '192.168.1.254/24' <= INET '192.168.1.2/24';
+----
+false
+
+query I
+SELECT INET '192.168.1.254/24' <= INET '192.168.1.2/28';
+----
+true
+
+query I
+SELECT INET '0.0.0.0' <= INET '255.255.255.255';
+----
+true
+
+query I
+SELECT INET '192.168.1.1' > INET '192.168.1.10';
+----
+false
+
+query I
+SELECT INET '192.168.1.1/28' > INET '192.168.1.1/24';
+----
+true
+
+query I
+SELECT INET '192.168.1.1/24' > INET '192.168.2.254/24';
+----
+false
+
+query I
+SELECT INET '192.168.1.1/24' > INET '192.168.1.254/24';
+----
+false
+
+query I
+SELECT INET '192.168.1.254/24' > INET '192.168.1.254/24';
+----
+true
+
+query I
+SELECT INET '192.168.1.254/24' > INET '192.168.1.2/24';
+----
+true
+
+query I
+SELECT INET '192.168.1.254/24' > INET '192.168.1.2/28';
+----
+false
+
+query I
+SELECT INET '192.168.1.1' >= INET '192.168.1.10';
+----
+false
+
+query I
+SELECT INET '192.168.1.1/28' >= INET '192.168.1.1/24';
+----
+true
+
+query I
+SELECT INET '192.168.1.1/24' >= INET '192.168.2.254/24';
+----
+false
+
+query I
+SELECT INET '192.168.1.1/24' >= INET '192.168.1.254/24';
+----
+false
+
+query I
+SELECT INET '192.168.1.254/24' >= INET '192.168.1.254/24';
+----
+true
+
+query I
+SELECT INET '192.168.1.254/24' >= INET '192.168.1.2/24';
+----
+true
+
+query I
+SELECT INET '192.168.1.254/24' >= INET '192.168.1.2/28';
+----
+false
+
 # underflow
 statement error
 SELECT INET '0.0.0.0' - 32;
+
+# overflow
+statement error
+SELECT INET '255.255.255.255' + 32;
