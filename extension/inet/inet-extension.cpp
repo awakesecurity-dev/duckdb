@@ -20,14 +20,7 @@ void INETExtension::Load(DuckDB &db) {
 
 	auto &catalog = Catalog::GetSystemCatalog(*con.context);
 
-	// add the "inet" type
-	child_list_t<LogicalType> children;
-	children.push_back(make_pair("ip_type", LogicalType::UTINYINT));
-	children.push_back(make_pair("address", LogicalType::HUGEINT));
-	children.push_back(make_pair("mask", LogicalType::USMALLINT));
-	auto inet_type = LogicalType::STRUCT(std::move(children));
-	inet_type.SetAlias("inet");
-
+	auto inet_type = INETExtension::INETType();
 	CreateTypeInfo info("inet", inet_type);
 	info.temporary = true;
 	info.internal = true;
@@ -42,6 +35,26 @@ void INETExtension::Load(DuckDB &db) {
 	CreateScalarFunctionInfo subtract_info(substract_fun);
 	subtract_info.on_conflict = OnCreateConflict::ALTER_ON_CONFLICT;
 	catalog.CreateFunction(*con.context, &subtract_info);
+
+	auto contain_within_fun = ScalarFunction(">>", {inet_type, inet_type}, LogicalType::BOOLEAN, INetFunctions::ContainWithin);
+	CreateScalarFunctionInfo contain_within_info(contain_within_fun);
+	contain_within_info.on_conflict = OnCreateConflict::ALTER_ON_CONFLICT;
+	catalog.CreateFunction(*con.context, &contain_within_info);
+
+	auto contain_within_eq_fun = ScalarFunction(">>=", {inet_type, inet_type}, LogicalType::BOOLEAN, INetFunctions::ContainWithinOrEqual);
+	CreateScalarFunctionInfo contain_within_eq_info(contain_within_eq_fun);
+	contain_within_eq_info.on_conflict = OnCreateConflict::ALTER_ON_CONFLICT;
+	catalog.CreateFunction(*con.context, &contain_within_eq_info);
+
+	auto contains_fun = ScalarFunction("<<", {inet_type, inet_type}, LogicalType::BOOLEAN, INetFunctions::Contains);
+	CreateScalarFunctionInfo contains_info(contains_fun);
+	contains_info.on_conflict = OnCreateConflict::ALTER_ON_CONFLICT;
+	catalog.CreateFunction(*con.context, &contains_info);
+
+	auto contains_eq_fun = ScalarFunction("<<=", {inet_type, inet_type}, LogicalType::BOOLEAN, INetFunctions::ContainsOrEqual);
+	CreateScalarFunctionInfo contains_eq_info(contains_eq_fun);
+	contains_eq_info.on_conflict = OnCreateConflict::ALTER_ON_CONFLICT;
+	catalog.CreateFunction(*con.context, &contains_eq_info);
 
 	// add inet casts
 	auto &config = DBConfig::GetConfig(*con.context);
